@@ -1,0 +1,80 @@
+Plone 3
+=======
+
+Zuerst in Plone 3 ein catalog clear&rebuild machen weil einige Bilder nicht existieren:
+[Errno 2] No such file or directory: '/home/zope/typiconia/zinstance/var/fss_storage_main/100/arc/pic/m/g-m/m-a-z/m-data/picasso-pablo/Picasso-Corrida-1934.jpg/8-7-6-5-4-3-2-1-Picasso_Corrida_1934.jpg'
+
+http://icon.tcs.ifi.lmu.de:18080/typicon/fss_maintenance_form muss funktionieren.
+Defekte Bilder löschen (oder einfügen)
+
+
+Plone 4
+=======
+
+configure fss in src-mrd/iw.fss/iw/fss/etc/plone-filesystemstorage.conf.in:
+
+storage-path /Users/philip/workspace/typiconia/var/fss_storage_global
+backup-path /Users/philip/workspace/typiconia/var/fss_backup_global
+storage-strategy  directory
+
+<site /typicon>
+  storage-path /Users/philip/workspace/typiconia/var/typicon/fss_storage_main
+  backup-path /Users/philip/workspace/typiconia/var/typicon/fss_backup_main
+  storage-strategy site2
+</site>
+
+
+
+storage-path /home/zope/typicon/var/fss_storage_global
+backup-path /home/zope/typicon/var/fss_backup_global
+storage-strategy  directory
+
+<site /typicon>
+  storage-path /home/zope/typicon/var/typicon/fss_storage_main
+  backup-path /home/zope/typicon/var/typicon/fss_backup_main
+  storage-strategy site2
+</site>
+
+
+Copy data in the locations above. Create empty backup-folders!
+
+Enable fss for ATFile and ATImage in iw.fss/iw/fss/configure.zcml
+
+Run all upgrade-steps of CMFPlone except blob-migration (http://localhost:8080/typicon/portal_setup/manage_workspace)
+Run all upgrade-steps if iw.fss
+Reinstall iw.fss and ATExtensions
+Change skin to sunburst
+
+Check if types are patched in http://localhost:8080/typicon/fss_management_form
+Check if images are accessible
+Clear & Rebuild Catalog
+pack DB
+
+
+Dexterity
+=========
+
+patch dx-migration in plone.app.contenttypes/plone/app/contenttypes/migration/migration.py:
+change data=old_image.data to data=old_image.read() (ImageMigrator)
+and data=old_file.data to data=old_file.read() (FileMigrator)
+
+install p.a.c
+migrate all content (35min for 4314 items?): 0:53:35
+resurrect old ATTopics
+
+
+
+
+Probleme:
+=========
+
+Problem: Bilder und Dateien sind nach DX-Migration nach 64KB abgeschnitten (d.h. sie sind nicht mehr komplett, nur die ersten 64KB ist da).
+Evtl. hat die Variable data ein Größenlimit?
+Oder der image-typ hat ein Größenlimit?
+Lösung: use old_image.read() instead of old_image.data.data (DONE)
+
+Problem: Einige Dateien fehlen: http://localhost:8080/typicon/100/arc/pso/d/g-d/d-a-z/d-data/d-fabrics/zollinger-holli/Zollinger-%20Holli_D%20fabrics_umbraline%20wheat%20rustic_spoonflower.com.png
+Lösung: Clear & Reindex in Plone3? Hatt keine Auswirking.
+
+Problem: OSError: [Errno 63] File name too long: "/Users/philip/workspace/typiconia/var/typicon/fss_storage_main/100/arc/ph/g-ph/ph-a-z/ph-data/div/image.2012-03-30.1281003727/1-Lange, Dorothea_Migrant agricultural worker. Seven hungry children. Mother aged thirty-two. Destitute in pea picker's camp, Nipomo, California 'cause of the failure of the early pea crop. These people had just sold their tent in order to buy food_1936.jpg"
+Lösung: TODO
